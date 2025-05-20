@@ -10,5 +10,6 @@ class Domains {
     @Column(updatable = false)
     var id: Long? = null
 
+    @Column(name = "description_domain", nullable = false)
     var descriptionDomain: String? = null
 }
