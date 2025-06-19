@@ -19,7 +19,7 @@ class TestItems {
     @Column(name = "item_order", nullable = false)
     var itemOrder: Int? = null
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "domain_id", nullable = false)
     var domain: Domains? = null
 

@@ -1,34 +1,37 @@
 package com.example.app_brunet_lezine.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import java.time.LocalDate
 
 @Entity
-@Table(name = "evaluators")
-class Evaluators {
-
+@Table(name = "administrators")
+class Administrator {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false)
     var id: Long? = null
 
-    @Column(name = "speciality", nullable = true)
-    var speciality: String? = null
-
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", length = 50, nullable = false)
     var fullName: String? = null
 
-    @Column(name = "nui", nullable = false, unique = true, length = 15)
+    @Column(length = 15, nullable = false, unique = true)
     var nui: String? = null
 
-    @Column(name = "phone", nullable = true, length = 20)
+    @Column(length = 20)
     var phone: String? = null
 
-    @Column(name = "birthdate", nullable = false)
+    @Column(nullable = false)
     var birthdate: LocalDate? = null
 
-    @Column(name = "gender", nullable = true, length = 10)
+    @Column(length = 10)
     var gender: String? = null
 
     @OneToOne

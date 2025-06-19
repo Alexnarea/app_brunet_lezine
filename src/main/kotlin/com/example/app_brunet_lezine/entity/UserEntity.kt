@@ -25,4 +25,6 @@ class UserEntity {
 
     @Column(nullable = false)
     var disabled: Boolean = false
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+    var roles: MutableList<RoleEntity> = mutableListOf()
 }

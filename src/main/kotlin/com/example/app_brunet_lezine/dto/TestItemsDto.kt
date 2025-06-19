@@ -5,6 +5,7 @@ class TestItemsDto {
     var description: String? = null
     var referenceAgeMonths: Int? = null
     var itemOrder: Int? = null
-
     var domainId: Long? = null
+    var descriptionDomain: String? = null // 👈 AÑADE ESTA LÍNEA
 }
+

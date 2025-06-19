@@ -1,59 +1,44 @@
 package com.example.app_brunet_lezine.config
-
 import com.auth0.jwt.interfaces.DecodedJWT
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.stereotype.Component
-import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.http.HttpHeaders
-import org.springframework.util.AntPathMatcher
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.AuthorityUtils
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.filter.OncePerRequestFilter
 
-@Component
+
 class JwtFilter(private val jwtUtil: JwtUtil) : OncePerRequestFilter() {
-
-    private val pathMatcher = AntPathMatcher()
-
-    // Ignora rutas públicas para evitar verificar tokens innecesariamente
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        val publicPaths = listOf(
-            "/auth/**",
-            "/actuator/**",
-            "/mqtt/**",
-            "/client/**",
-            "/children/**"
-        )
-        return publicPaths.any { pathMatcher.match(it, request.servletPath) }
-    }
 
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION)
+        val authHeader = request.getHeader(HttpHeaders.AUTHORIZATION)
 
-        if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith("Bearer ")) {
-            val jwtToken = authorizationHeader.substring(7)
+        // Solo intenta validar si hay un token real
+        if (!authHeader.isNullOrBlank() && authHeader.startsWith("Bearer ")) {
+            val jwtToken = authHeader.removePrefix("Bearer ").trim()
 
             try {
-                val decodedJWT: DecodedJWT = jwtUtil.validateToken(jwtToken)
-                val username: String = jwtUtil.extractUsername(decodedJWT)
+                if (jwtToken.isNotBlank()) {
+                    val decodedJWT: DecodedJWT = jwtUtil.validateToken(jwtToken)
+                    val username: String = jwtUtil.extractUsername(decodedJWT)
+                    val stringAuthorities: String = jwtUtil.getSpecificClaim(decodedJWT, "authorities").asString()
 
-                // Si en el futuro quieres roles, los extraes aquí desde el token
-                val authorities: Collection<GrantedAuthority> = emptyList()
+                    val authorities: Collection<GrantedAuthority> =
+                        AuthorityUtils.commaSeparatedStringToAuthorityList(stringAuthorities)
 
-                val authenticationToken = UsernamePasswordAuthenticationToken(username, null, authorities)
-                val context = SecurityContextHolder.createEmptyContext()
-                context.authentication = authenticationToken
-                SecurityContextHolder.setContext(context)
-
+                    val authenticationToken = UsernamePasswordAuthenticationToken(username, null, authorities)
+                    SecurityContextHolder.getContext().authentication = authenticationToken
+                }
             } catch (ex: Exception) {
-                logger.warn("Token inválido o expirado: ${ex.message}")
-                SecurityContextHolder.clearContext()
+                logger.warn("Token inválido pero ignorado por configuración pública: ${ex.message}")
             }
         }
 

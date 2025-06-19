@@ -27,13 +27,13 @@ class UserSecurityService : UserDetailsService {
     @Autowired
     private lateinit var jwtUtil: JwtUtil
 
-    @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): UserDetails {
         val userEntity = userRepository.findByUsername(username)
             ?: throw UsernameNotFoundException("Usuario no encontrado")
 
-        // Sin roles, autoridades vacías
-        val authorityList = emptyList<SimpleGrantedAuthority>()
+        val authorityList = userEntity.roles?.map {
+            SimpleGrantedAuthority("ROLE_${it.role}")
+        } ?: emptyList()
 
         return org.springframework.security.core.userdetails.User.builder()
             .username(userEntity.username!!)

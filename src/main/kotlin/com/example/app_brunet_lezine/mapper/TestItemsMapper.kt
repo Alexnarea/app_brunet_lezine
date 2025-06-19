@@ -24,6 +24,7 @@ object TestItemsMapper {
         testItemsDto.referenceAgeMonths = testItems.referenceAgeMonths
         testItemsDto.itemOrder = testItems.itemOrder
         testItemsDto.domainId = testItems.domain?.id
+        testItemsDto.descriptionDomain = testItems.domain?.descriptionDomain ?: "No definido"
         return testItemsDto
     }
 }

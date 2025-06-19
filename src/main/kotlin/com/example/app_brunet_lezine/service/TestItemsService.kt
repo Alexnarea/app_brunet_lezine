@@ -1,7 +1,6 @@
 package com.example.app_brunet_lezine.service
 
 import com.example.app_brunet_lezine.dto.TestItemsDto
-import com.example.app_brunet_lezine.entity.TestItems
 import com.example.app_brunet_lezine.mapper.TestItemsMapper
 import com.example.app_brunet_lezine.repository.DomainsRepository
 import com.example.app_brunet_lezine.repository.TestItemsRepository
@@ -31,6 +30,12 @@ class TestItemsService {
         val testItem = testItemsRepository.findById(id)
             .orElseThrow { EntityNotFoundException("TestItem con ID $id no encontrado") }
         return testItemsMapper.toTestDto(testItem)
+    }
+
+    fun findByAge(ageInMonths: Int): List<TestItemsDto> {
+        val items = testItemsRepository
+            .findByReferenceAgeMonthsLessThanEqualOrderByReferenceAgeMonthsAscItemOrderAsc(ageInMonths)
+        return items.map { testItemsMapper.toTestDto(it) }
     }
 
     @Transactional
@@ -75,5 +80,11 @@ class TestItemsService {
         val testItem = testItemsRepository.findById(id)
             .orElseThrow { EntityNotFoundException("TestItem con ID $id no encontrado") }
         testItemsRepository.delete(testItem)
+    }
+
+    //múltiples ítems por ID
+    fun findAllByIds(ids: List<Long>): List<TestItemsDto> {
+        val items = testItemsRepository.findAllById(ids)
+        return items.map { testItemsMapper.toTestDto(it) }
     }
 }

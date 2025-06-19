@@ -3,6 +3,7 @@ package com.example.app_brunet_lezine.controller
 import com.example.app_brunet_lezine.dto.TestItemsDto
 import com.example.app_brunet_lezine.response.SuccessResponse
 import com.example.app_brunet_lezine.service.TestItemsService
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -24,8 +25,21 @@ class TestItemsController(
         return ResponseEntity.ok(testItem)
     }
 
+    @GetMapping("/by-age")
+    fun getItemsByAge(@RequestParam age: Int): ResponseEntity<List<TestItemsDto>> {
+        val items = testItemsService.findByAge(age)
+        return ResponseEntity.ok(items)
+    }
+
+    // ✅ NUEVO ENDPOINT para obtener ítems por una lista de IDs
+    @PostMapping("/by-ids")
+    fun getItemsByIds(@RequestBody ids: List<Long>): ResponseEntity<List<TestItemsDto>> {
+        val items = testItemsService.findAllByIds(ids)
+        return ResponseEntity.ok(items)
+    }
+
     @PostMapping
-    fun create(@RequestBody testItemsDto: TestItemsDto): ResponseEntity<TestItemsDto> {
+    fun create(@Valid @RequestBody testItemsDto: TestItemsDto): ResponseEntity<TestItemsDto> {
         val createdTestItem = testItemsService.save(testItemsDto)
         return ResponseEntity.ok(createdTestItem)
     }

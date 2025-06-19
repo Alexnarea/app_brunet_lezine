@@ -4,47 +4,65 @@ import com.example.app_brunet_lezine.dto.EvaluatorsDto
 import com.example.app_brunet_lezine.entity.Evaluators
 import com.example.app_brunet_lezine.mapper.EvaluatorsMapper
 import com.example.app_brunet_lezine.repository.EvaluatorsRepository
+import com.example.app_brunet_lezine.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
 class EvaluatorsService {
+
     @Autowired
     lateinit var evaluatorsRepository: EvaluatorsRepository
-    @Autowired
-    lateinit var evaluatorsMapper: EvaluatorsMapper
 
-    fun findAll(): List<EvaluatorsDto>{
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    fun findAll(): List<EvaluatorsDto> {
         val evaluators = evaluatorsRepository.findAll()
-        return evaluators.map { evaluatorsMapper.toEvaluatorsDto(it) }
+        return evaluators.map { EvaluatorsMapper.toEvaluatorsDto(it) }
     }
 
-    fun findById(id: Long): EvaluatorsDto{
+    fun findById(id: Long): EvaluatorsDto {
         val evaluators = evaluatorsRepository.findById(id)
-            .orElseThrow{EntityNotFoundException("Evaluators with id $id not found")}
-        return evaluatorsMapper.toEvaluatorsDto(evaluators)
+            .orElseThrow { EntityNotFoundException("Evaluator with id $id not found") }
+        return EvaluatorsMapper.toEvaluatorsDto(evaluators)
     }
 
     fun save(evaluatorDto: EvaluatorsDto): EvaluatorsDto {
-        val evaluators = evaluatorsMapper.toEntity(evaluatorDto)
-        val saveEvaluators = evaluatorsRepository.save(evaluators)
-        return evaluatorsMapper.toEvaluatorsDto(saveEvaluators)
+        val user = userRepository.findById(evaluatorDto.userId
+            ?: throw IllegalArgumentException("userId is required"))
+            .orElseThrow { EntityNotFoundException("User with id ${evaluatorDto.userId} not found") }
+
+        val evaluators = EvaluatorsMapper.toEntity(evaluatorDto, user)
+        val saved = evaluatorsRepository.save(evaluators)
+        return EvaluatorsMapper.toEvaluatorsDto(saved)
     }
 
     fun update(id: Long, evaluatorDto: EvaluatorsDto): EvaluatorsDto {
-        val evaluators = evaluatorsRepository.findById(id)
-            .orElseThrow{EntityNotFoundException("Evaluators with id $id not found")}
-        evaluators.apply {
-            speciality = evaluatorDto.speciality
+        val evaluator = evaluatorsRepository.findById(id)
+            .orElseThrow { EntityNotFoundException("Evaluator with id $id not found") }
+
+        evaluator.speciality = evaluatorDto.speciality
+        evaluator.fullName = evaluatorDto.fullName
+        evaluator.nui = evaluatorDto.nui
+        evaluator.phone = evaluatorDto.phone
+        evaluator.birthdate = evaluatorDto.birthdate
+        evaluator.gender = evaluatorDto.gender
+
+        if (evaluatorDto.userId != null) {
+            val user = userRepository.findById(evaluatorDto.userId!!)
+                .orElseThrow { EntityNotFoundException("User with id ${evaluatorDto.userId} not found") }
+            evaluator.user = user
         }
-        val updatedEvaluators = evaluatorsRepository.save(evaluators)
-        return evaluatorsMapper.toEvaluatorsDto(updatedEvaluators)
+
+        val updated = evaluatorsRepository.save(evaluator)
+        return EvaluatorsMapper.toEvaluatorsDto(updated)
     }
 
     fun delete(id: Long) {
-        val evaluators = evaluatorsRepository.findById(id)
-            .orElseThrow{EntityNotFoundException("Evaluators with id $id not found")}
-        evaluatorsRepository.delete(evaluators)
+        val evaluator = evaluatorsRepository.findById(id)
+            .orElseThrow { EntityNotFoundException("Evaluator with id $id not found") }
+        evaluatorsRepository.delete(evaluator)
     }
 }
