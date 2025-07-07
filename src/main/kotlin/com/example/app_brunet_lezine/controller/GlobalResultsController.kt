@@ -31,6 +31,17 @@ class GlobalResultsController {
         }
     }
 
+    @GetMapping("/evaluation/{evaluationId}")
+    fun getByEvaluationId(@PathVariable evaluationId: Long): ResponseEntity<GlobalResultsDto> {
+        return try {
+            val result = globalResultsService.findByEvaluationId(evaluationId)
+            ResponseEntity.ok(result)
+        } catch (ex: EntityNotFoundException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        }
+    }
+
+
     @PostMapping
     fun create(@RequestBody dto: GlobalResultsDto): ResponseEntity<GlobalResultsDto> {
         return try {
@@ -70,9 +81,12 @@ class GlobalResultsController {
             val result = globalResultsService.calculateAndSaveResult(evaluationId)
             ResponseEntity.ok(result)
         } catch (ex: EntityNotFoundException) {
-            ResponseEntity.notFound().build()
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)
+        } catch (ex: IllegalStateException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
         } catch (ex: Exception) {
-            ResponseEntity.badRequest().build()
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
         }
     }
+
 }

@@ -5,49 +5,72 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.interfaces.Claim
 import com.auth0.jwt.interfaces.DecodedJWT
+import com.example.app_brunet_lezine.repository.UserRepository
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
 
 @Component
 class JwtUtil {
 
-    private val SECRET_KEY = "s3cr3t"
+    private val SECRET_KEY = System.getenv("JWT_SECRET") ?: "s3cr3t"
     private val ALGORITHM: Algorithm = Algorithm.HMAC256(SECRET_KEY)
 
-    fun create(authentication: Authentication): String? {
+    @Autowired
+    private lateinit var userRepository: UserRepository
 
-        val authorities = authentication.authorities
-            .stream()
-            .map { obj: GrantedAuthority -> obj.authority }
-            .collect(Collectors.joining(","))
+    fun create(authentication: Authentication): String {
+        val now = Date()
+        val expiry = Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(15))
+
+        // ⚠ Aquí accedemos correctamente al UserDetails
+        val userDetails = authentication.principal as? UserDetails
+            ?: throw IllegalStateException("El principal no es un UserDetails")
+
+        val username = userDetails.username
+
+        val userEntity = userRepository.findByUsername(username)
+            ?: throw IllegalStateException("Usuario no encontrado al generar el token")
+
+        val authorities = userDetails.authorities
+            .joinToString(",") { it.authority }
+
         return JWT.create()
-            .withClaim("authorities", authorities)
-            .withSubject(authentication.principal.toString() )
+            .withSubject(username)
             .withIssuer("project-admin")
-            .withIssuedAt(Date())
-            .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(15)))
+            .withIssuedAt(now)
+            .withExpiresAt(expiry)
+            .withClaim("authorities", authorities)
+            .withClaim("userId", userEntity.id)
             .sign(ALGORITHM)
     }
 
-    fun validateToken(token: String?): DecodedJWT {
-        val algorithm: Algorithm = Algorithm.HMAC256(SECRET_KEY)
-        val verifier = JWT.require(algorithm)
-            .withIssuer("project-admin")
-            .build()
-        val decodedJWT: DecodedJWT = verifier.verify(token)
-            ?: throw JWTVerificationException("Token invalid, not Authorized j")
-        return decodedJWT
+    fun validateToken(token: String): DecodedJWT {
+        return try {
+            val verifier = JWT.require(ALGORITHM)
+                .withIssuer("project-admin")
+                .acceptLeeway(120) // 2 minutos de margen
+                .build()
+
+            verifier.verify(token)
+        } catch (ex: JWTVerificationException) {
+            throw JWTVerificationException("Token inválido: ${ex.message}")
+        }
     }
 
     fun extractUsername(decodedJWT: DecodedJWT): String {
-        return decodedJWT.subject.toString()
+        return decodedJWT.subject
     }
 
-    fun getSpecificClaim(decodedJWT: DecodedJWT, claimName: String?): Claim {
+    fun extractUserId(decodedJWT: DecodedJWT): Long {
+        return decodedJWT.getClaim("userId").asLong()
+            ?: throw IllegalStateException("El token no contiene el userId")
+    }
+
+    fun getSpecificClaim(decodedJWT: DecodedJWT, claimName: String): Claim {
         return decodedJWT.getClaim(claimName)
     }
 }

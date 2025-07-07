@@ -8,8 +8,8 @@ data class EvaluationDetailDto(
     val chronologicalAgeMonths: Int,
     val childrenId: Long,
     val evaluatorId: Long,
-    val edadDesarrollo: String,
-    val coeficiente: Double,
+    var resultYears: String,
+    val coefficient: Double,
     val classification: String,
     val observaciones: String?,
     val items: List<EvaluationItemDto>
@@ -19,5 +19,7 @@ data class EvaluationItemDto(
     val id: Long,
     val task: String,
     val domain: String,
-    val completed: Boolean
+    val completed: Boolean,
+    val referenceAgeMonths: Int // ✅ nuevo campo para agrupar ítems por edad
+
 )

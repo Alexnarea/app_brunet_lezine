@@ -27,6 +27,24 @@ class EvaluatorsController {
         return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
     }
 
+    @GetMapping("/by-user-id/{userId}")
+    fun findByUserId(@PathVariable userId: Long): ResponseEntity<EvaluatorsDto> {
+        val evaluator = evaluatorsService.findByUserId(userId)
+        return ResponseEntity.ok(evaluator)
+    }
+
+    @GetMapping("/by-username")
+    fun findByUsername(@RequestParam username: String): ResponseEntity<EvaluatorsDto> {
+        val evaluator = evaluatorsService.findByUsername(username)
+        return ResponseEntity.ok(evaluator)
+    }
+
+    @GetMapping("/available-users")
+    fun getAvailableUsers(): ResponseEntity<*> {
+        val availableUsers = evaluatorsService.findAvailableUsers()
+        return ResponseEntity(SuccessResponse(data = availableUsers), HttpStatus.OK)
+    }
+
     @PostMapping
     fun save (@RequestBody @Valid evaluatorsDto: EvaluatorsDto): ResponseEntity<Any>{
         val response = evaluatorsService.save(evaluatorsDto)

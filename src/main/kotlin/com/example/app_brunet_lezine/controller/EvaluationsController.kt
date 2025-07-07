@@ -44,10 +44,11 @@ class EvaluationsController {
 
     @PostMapping("/create-with-responses")
     fun createWithResponses(@Valid @RequestBody request: EvaluationRequestDto): ResponseEntity<EvaluationResultDto> {
-        println("Llamando a createWithResponses con: $request") // 👈 añade este log
+        println("📌 Llamando a createWithResponses con datos: childrenId=${request.childrenId}, age=${request.chronologicalAgeMonths}, respuestas=${request.responses.size}")
         val result = evaluationsService.createEvaluationWithResponses(request)
         return ResponseEntity.status(HttpStatus.CREATED).body(result)
     }
+
 
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody dto: EvaluationsDto): ResponseEntity<EvaluationsDto> {

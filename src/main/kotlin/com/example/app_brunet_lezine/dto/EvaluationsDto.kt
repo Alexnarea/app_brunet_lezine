@@ -9,4 +9,10 @@ class EvaluationsDto {
 
     var childrenId: Long? = null
     var evaluatorId: Long? = null
+
+    var resultYears: String? = null
+    var resultDetail: String? = null
+    var coefficient: Double? = null
+    var classification: String? = null
+
 }

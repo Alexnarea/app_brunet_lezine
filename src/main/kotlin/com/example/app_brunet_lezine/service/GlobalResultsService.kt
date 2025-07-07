@@ -67,7 +67,7 @@ class GlobalResultsService {
             .orElseThrow { EntityNotFoundException("Evaluation not found") }
 
         val updatedEntity = globalResultsMapper.toEntity(dto, evaluation)
-        updatedEntity.id = existing.id // mantener el mismo ID
+        updatedEntity.id = existing.id
 
         val saved = globalResultsRepository.save(updatedEntity)
         return globalResultsMapper.toGlobalResultsDto(saved)
@@ -83,43 +83,82 @@ class GlobalResultsService {
         val evaluation = evaluationsRepository.findById(evaluationId)
             .orElseThrow { EntityNotFoundException("Evaluation with id $evaluationId not found") }
 
-        val responses = responsesRepository.findAll()
-            .filter { it.evaluation?.id == evaluationId && it.passed == true }
+        val responses = responsesRepository.findByEvaluationId(evaluationId)
+        if (responses.isEmpty()) throw IllegalStateException("No hay respuestas para la evaluación $evaluationId")
 
-        val totalMonthsApproved = BigDecimal.valueOf(responses.size.toDouble() * 1.5)
+        val groupedByAge = responses
+            .filter { it.item?.referenceAgeMonths != null }
+            .groupBy { it.item!!.referenceAgeMonths!! }
+            .toSortedMap(reverseOrder())
 
-        val chronologicalAge = evaluation.chronologicalAgeMonths
-            ?: throw IllegalStateException("Invalid chronological age")
+        var edadBase: Double? = null
+        var itemsAprobadosSumados = 0
 
-        val coefficient = totalMonthsApproved
-            .divide(BigDecimal.valueOf(chronologicalAge.toDouble()), 4, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(100))
+        // Detectar base
+        for ((age, group) in groupedByAge) {
+            val passed = group.count { it.passed == true }
+            val total = group.size
 
-        val years = totalMonthsApproved.divide(BigDecimal.valueOf(12), 0, RoundingMode.DOWN).toInt()
-        val months = totalMonthsApproved.remainder(BigDecimal.valueOf(12)).toInt()
+            if (passed == total && total > 0) {
+                // Pasó todos los ítems → sube a la siguiente edad
+                edadBase = age + 12.0
+                itemsAprobadosSumados = 0
+                break
+            }
+
+            if (passed >= 1) {
+                // Posible base
+                if (edadBase == null || age < edadBase) {
+                    edadBase = age.toDouble()
+                }
+            }
+        }
+
+        if (edadBase == null) {
+            edadBase = 0.0
+        }
+
+        // Sumar ítems aprobados de la edad base y superiores
+        for ((age, group) in groupedByAge) {
+            if (age >= edadBase) {
+                val passed = group.count { it.passed == true }
+                itemsAprobadosSumados += passed
+            }
+        }
+
+        val edadDesarrolloMeses = edadBase + (itemsAprobadosSumados * 1.5)
+
+        val edadCronologicaMeses = evaluation.chronologicalAgeMonths?.toDouble()
+            ?: throw IllegalStateException("Edad cronológica no válida")
+
+        val edadDesarrolloDias = edadDesarrolloMeses * 30.44
+        val edadCronologicaDias = edadCronologicaMeses * 30.44
+
+        val coeficiente = if (edadCronologicaDias > 0)
+            (edadDesarrolloDias / edadCronologicaDias) * 100
+        else 0.0
+
+        val years = (edadDesarrolloMeses / 12).toInt()
+        val months = (edadDesarrolloMeses % 12).toInt()
         val resultYears = "$years años y $months meses"
 
         val classification = when {
-            coefficient >= BigDecimal.valueOf(90) -> "Desarrollo normal"
-            coefficient >= BigDecimal.valueOf(75) -> "Retraso leve"
-            coefficient >= BigDecimal.valueOf(50) -> "Retraso moderado"
+            coeficiente >= 90 -> "Desarrollo normal"
+            coeficiente >= 75 -> "Retraso leve"
+            coeficiente >= 50 -> "Retraso moderado"
             else -> "Retraso severo"
         }
 
-        val existingOptional = globalResultsRepository.findByEvaluationId(evaluationId)
-        val existingResult = if (existingOptional.isPresent) existingOptional.get() else null
+        val existing = globalResultsRepository.findByEvaluationId(evaluationId).orElse(null)
+        val result = existing ?: GlobalResults().apply { this.evaluation = evaluation }
 
-        val result = existingResult ?: GlobalResults().apply {
-            this.evaluation = evaluation
-        }
-
-        result.totalMonthsApproved = totalMonthsApproved
-        result.coefficient = coefficient
+        result.totalMonthsApproved = BigDecimal.valueOf(edadDesarrolloMeses).setScale(1, RoundingMode.HALF_UP)
+        result.coefficient = BigDecimal.valueOf(coeficiente).setScale(2, RoundingMode.HALF_UP)
         result.resultYears = resultYears
-        result.resultDetail = "Edad de desarrollo estimada en $resultYears"
+        result.resultDetail = "Edad de desarrollo: $resultYears"
         result.classification = classification
 
-        val savedResult = globalResultsRepository.save(result)
-        return globalResultsMapper.toGlobalResultsDto(savedResult)
+        val saved = globalResultsRepository.save(result)
+        return globalResultsMapper.toGlobalResultsDto(saved)
     }
 }

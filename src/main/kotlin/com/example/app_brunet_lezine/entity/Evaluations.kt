@@ -25,4 +25,7 @@ class Evaluations {
     @JoinColumn(name = "evaluator_id", nullable = false)
     var evaluator: Evaluators? = null
 
+    @OneToOne(mappedBy = "evaluation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    var globalResults: GlobalResults? = null
+
 }

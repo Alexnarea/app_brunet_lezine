@@ -1,8 +1,12 @@
 package com.example.app_brunet_lezine.service
 
 import com.example.app_brunet_lezine.dto.EvaluatorsDto
+import com.example.app_brunet_lezine.dto.SimpleUserDto
+import com.example.app_brunet_lezine.dto.UserDto
 import com.example.app_brunet_lezine.entity.Evaluators
 import com.example.app_brunet_lezine.mapper.EvaluatorsMapper
+import com.example.app_brunet_lezine.mapper.SimpleUserMapper
+import com.example.app_brunet_lezine.mapper.UserMapper
 import com.example.app_brunet_lezine.repository.EvaluatorsRepository
 import com.example.app_brunet_lezine.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
@@ -11,6 +15,15 @@ import org.springframework.stereotype.Service
 
 @Service
 class EvaluatorsService {
+
+    @Autowired
+    private lateinit var simpleUserMapper: SimpleUserMapper
+
+    @Autowired
+    private lateinit var userMapper: UserMapper
+
+    @Autowired
+    private lateinit var evaluatorsMapper: EvaluatorsMapper
 
     @Autowired
     lateinit var evaluatorsRepository: EvaluatorsRepository
@@ -27,6 +40,28 @@ class EvaluatorsService {
         val evaluators = evaluatorsRepository.findById(id)
             .orElseThrow { EntityNotFoundException("Evaluator with id $id not found") }
         return EvaluatorsMapper.toEvaluatorsDto(evaluators)
+    }
+
+    fun findByUsername(username: String): EvaluatorsDto {
+        val entity = evaluatorsRepository.findByUserUsername(username)
+            ?: throw EntityNotFoundException("Evaluador no encontrado para el usuario: $username")
+        return evaluatorsMapper.toEvaluatorsDto(entity)
+    }
+
+
+    fun findByUserId(userId: Long): EvaluatorsDto {
+        val evaluator = evaluatorsRepository.findByUserId(userId)
+            ?: throw EntityNotFoundException("Evaluador no encontrado para el usuario $userId")
+
+        return evaluatorsMapper.toEvaluatorsDto(evaluator)
+    }
+
+    fun findAvailableUsers(): List<SimpleUserDto> {
+        val allUsers = userRepository.findAll()
+        val assignedUserIds = evaluatorsRepository.findAll().mapNotNull { it.user?.id }.toSet()
+        return allUsers
+            .filter { !assignedUserIds.contains(it.id) }
+            .map { simpleUserMapper.toUserSimpleDto(it)}
     }
 
     fun save(evaluatorDto: EvaluatorsDto): EvaluatorsDto {

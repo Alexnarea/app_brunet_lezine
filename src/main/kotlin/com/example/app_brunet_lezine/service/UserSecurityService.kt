@@ -4,7 +4,11 @@ import com.example.app_brunet_lezine.config.JwtUtil
 import com.example.app_brunet_lezine.dto.LoginDto
 import com.example.app_brunet_lezine.dto.TokenDto
 import com.example.app_brunet_lezine.repository.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.DisabledException
+import org.springframework.security.authentication.LockedException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -27,6 +31,8 @@ class UserSecurityService : UserDetailsService {
     @Autowired
     private lateinit var jwtUtil: JwtUtil
 
+    private val logger = LoggerFactory.getLogger(UserSecurityService::class.java)
+
     override fun loadUserByUsername(username: String): UserDetails {
         val userEntity = userRepository.findByUsername(username)
             ?: throw UsernameNotFoundException("Usuario no encontrado")
@@ -45,21 +51,40 @@ class UserSecurityService : UserDetailsService {
     }
 
     fun login(loginDto: LoginDto): TokenDto {
-        val authentication = authenticate(loginDto.username!!, loginDto.password!!)
+        val username = loginDto.username ?: throw BadCredentialsException("El nombre de usuario es requerido")
+        val password = loginDto.password ?: throw BadCredentialsException("La contraseña es requerida")
+
+        logger.info("Intentando login para usuario: $username")
+
+        val authentication = authenticate(username, password)
         SecurityContextHolder.getContext().authentication = authentication
         val accessToken = jwtUtil.create(authentication)
+
+        logger.info("Login exitoso, token generado")
+
         return TokenDto().apply {
             jwt = accessToken
         }
     }
 
+
     fun authenticate(username: String, password: String): Authentication {
         val userDetails = loadUserByUsername(username)
 
-        if (!passwordEncoder.matches(password, userDetails.password)) {
-            throw UsernameNotFoundException("Credenciales incorrectas")
+        if (userDetails is org.springframework.security.core.userdetails.User) {
+            if (!userDetails.isAccountNonLocked) {
+                throw LockedException("Usuario bloqueado")
+            }
+            if (!userDetails.isEnabled) {
+                throw DisabledException("Usuario deshabilitado")
+            }
         }
 
-        return UsernamePasswordAuthenticationToken(username, null, userDetails.authorities)
+        if (!passwordEncoder.matches(password, userDetails.password)) {
+            throw BadCredentialsException("Credenciales incorrectas")
+        }
+
+        return UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
     }
 }
+

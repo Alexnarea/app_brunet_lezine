@@ -7,6 +7,9 @@ import com.example.app_brunet_lezine.mapper.UserMapper
 import com.example.app_brunet_lezine.repository.UserRepository
 import com.example.app_brunet_lezine.response.SuccessResponse
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.DisabledException
+import org.springframework.security.authentication.LockedException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -51,16 +54,17 @@ class UserService(
 
     fun login(loginDto: LoginDto): UserEntity {
         val user = userRepository.findByUsername(loginDto.username!!)
-            ?: throw Exception("Usuario no encontrado")
+            ?: throw BadCredentialsException("Usuario no encontrado")
 
-        if (user.locked == true) throw Exception("Usuario bloqueado")
-        if (user.disabled == true) throw Exception("Usuario deshabilitado")
+        if (user.locked == true) throw LockedException("Usuario bloqueado")
+        if (user.disabled == true) throw DisabledException("Usuario deshabilitado")
 
         if (!passwordEncoder.matches(loginDto.password, user.password)) {
-            throw Exception("Contraseña incorrecta")
+            throw BadCredentialsException("Contraseña incorrecta")
         }
         return user
     }
+
 
     fun create(userDto: UserDto): UserEntity {
         if (userDto.password.isNullOrBlank()) {

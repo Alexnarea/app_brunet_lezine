@@ -1,6 +1,5 @@
 package com.example.app_brunet_lezine.config
 
-import com.example.app_brunet_lezine.constants.Constants
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -21,14 +20,27 @@ class SecurityConfig(
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .cors { }  // Aquí habilitamos CORS
+            .cors { }
             .sessionManagement { session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests { auth ->
-                auth.anyRequest().permitAll()
+                auth
+                    .requestMatchers("/api/auth/**").permitAll() // Público
+
+                    // Evaluadores y admin
+                    .requestMatchers(
+                        "/children/**",
+                        "/api/evaluations/**",
+                        "/api/test-items/**",
+                        "/api/responses/**",
+                        "/api/global-results/**"
+                    ).hasAnyRole("ADMIN", "EVALUATOR")
+
+                    // Todo lo demás solo admin
+                    .anyRequest().hasRole("ADMIN")
             }
-            //.addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
@@ -44,3 +56,4 @@ class SecurityConfig(
         return BCryptPasswordEncoder()
     }
 }
+
