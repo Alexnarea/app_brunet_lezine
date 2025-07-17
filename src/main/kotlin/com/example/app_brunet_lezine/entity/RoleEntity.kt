@@ -4,15 +4,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "role")
+@Table(name = "role") // ✅ dejamos el nombre como en tu base
 class RoleEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false)
     var id: Long? = null
-    var role: String? = null
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable=false, updatable=false)
+
+    @Column(nullable = false)
+    var role: String? = null // ✅ mantenemos 'role' como nombre de columna
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // ✅ permitimos insertar el user_id
     @JsonIgnore
-    var user:UserEntity? = null
+    var user: UserEntity? = null
 }

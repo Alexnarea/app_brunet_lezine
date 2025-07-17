@@ -7,4 +7,5 @@ class UserDto {
     var email: String? = null
     var locked: Boolean? = null
     var disabled: Boolean? = null
+    var role: String? = null
 }

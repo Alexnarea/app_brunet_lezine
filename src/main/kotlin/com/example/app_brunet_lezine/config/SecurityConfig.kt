@@ -26,7 +26,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/api/auth/**").permitAll() // Público
+                    .requestMatchers("/", "/api/auth/**").permitAll() // ✅ permitido público
 
                     // Evaluadores y admin
                     .requestMatchers(
@@ -37,14 +37,16 @@ class SecurityConfig(
                         "/api/global-results/**"
                     ).hasAnyRole("ADMIN", "EVALUATOR")
 
-                    // Todo lo demás solo admin
+                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
+
+                    .requestMatchers("/api/evaluators/**").hasRole("ADMIN")
+
                     .anyRequest().hasRole("ADMIN")
             }
             .addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
-
 
     @Bean
     fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager {
@@ -56,4 +58,3 @@ class SecurityConfig(
         return BCryptPasswordEncoder()
     }
 }
-

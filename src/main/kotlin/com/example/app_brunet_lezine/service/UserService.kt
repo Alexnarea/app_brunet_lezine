@@ -2,6 +2,7 @@ package com.example.app_brunet_lezine.service
 
 import com.example.app_brunet_lezine.dto.LoginDto
 import com.example.app_brunet_lezine.dto.UserDto
+import com.example.app_brunet_lezine.entity.RoleEntity
 import com.example.app_brunet_lezine.entity.UserEntity
 import com.example.app_brunet_lezine.mapper.UserMapper
 import com.example.app_brunet_lezine.repository.UserRepository
@@ -23,27 +24,30 @@ class UserService(
 
     fun list(): List<UserEntity> = userRepository.findAll()
 
-    fun listById(id: Long?): UserEntity? = id?.let { userRepository.findById(it).orElse(null) }
+    fun listById(id: Long?): UserEntity? =
+        id?.let { userRepository.findById(it).orElse(null) }
 
     fun updatePassword(loginDto: LoginDto): UserEntity {
-        if (loginDto.password.isNullOrBlank()) {
-            throw Exception("La nueva contraseña no puede estar vacía")
-        }
+        val password = loginDto.password?.takeIf { it.isNotBlank() }
+            ?: throw IllegalArgumentException("La nueva contraseña no puede estar vacía")
 
         val user = userRepository.findByUsername(loginDto.username!!)
-            ?: throw Exception("Usuario no encontrado")
+            ?: throw IllegalArgumentException("Usuario no encontrado")
 
-        user.password = passwordEncoder.encode(loginDto.password)
+        user.password = passwordEncoder.encode(password)
         return userRepository.save(user)
     }
 
     @Transactional
     fun delete(id: Long?): SuccessResponse {
         try {
-            id?.let {
-                if (!userRepository.existsById(it)) throw Exception("Id no existe")
-                userRepository.deleteById(it)
-            } ?: throw Exception("Id es null")
+            val userId = id ?: throw IllegalArgumentException("Id es null")
+
+            if (!userRepository.existsById(userId)) {
+                throw IllegalArgumentException("Id no existe")
+            }
+
+            userRepository.deleteById(userId)
             return SuccessResponse("success")
         } catch (e: DataIntegrityViolationException) {
             throw SQLException("Violación de integridad de datos")
@@ -56,28 +60,20 @@ class UserService(
         val user = userRepository.findByUsername(loginDto.username!!)
             ?: throw BadCredentialsException("Usuario no encontrado")
 
-        if (user.locked == true) throw LockedException("Usuario bloqueado")
-        if (user.disabled == true) throw DisabledException("Usuario deshabilitado")
+        if (user.locked) throw LockedException("Usuario bloqueado")
+        if (user.disabled) throw DisabledException("Usuario deshabilitado")
 
         if (!passwordEncoder.matches(loginDto.password, user.password)) {
             throw BadCredentialsException("Contraseña incorrecta")
         }
+
         return user
     }
 
-
     fun create(userDto: UserDto): UserEntity {
-        if (userDto.password.isNullOrBlank()) {
-            throw IllegalArgumentException("La contraseña no puede estar vacía")
-        }
-
-        if (userDto.username.isNullOrBlank()) {
-            throw IllegalArgumentException("El nombre de usuario no puede estar vacío")
-        }
-
-        if (userDto.email.isNullOrBlank()) {
-            throw IllegalArgumentException("El email no puede estar vacío")
-        }
+        require(!userDto.username.isNullOrBlank()) { "El nombre de usuario no puede estar vacío" }
+        require(!userDto.email.isNullOrBlank()) { "El email no puede estar vacío" }
+        require(!userDto.password.isNullOrBlank()) { "La contraseña no puede estar vacía" }
 
         if (userRepository.existsByUsername(userDto.username!!)) {
             throw IllegalArgumentException("El nombre de usuario ya existe")
@@ -87,46 +83,42 @@ class UserService(
             throw IllegalArgumentException("El email ya está registrado")
         }
 
+        // 🛠️ Aseguramos que se cree uno nuevo, no se reutilice uno existente
+        userDto.id = null
+
         val user = UserMapper.toEntity(userDto)
         user.password = passwordEncoder.encode(userDto.password)
 
         return userRepository.save(user)
     }
 
-
-
-
-
-
-    // -------------------------------
-    // 🧩 Futuras funcionalidades:
-    // -------------------------------
-
-    /*
-    fun create(userDto: UserDto): UserEntity {
-        if (userDto.password.isNullOrBlank()) {
-            throw Exception("La contraseña no puede estar vacía")
-        }
-
-        val user = UserMapper.toEntity(userDto)
-        user.password = passwordEncoder.encode(userDto.password)
-        return userRepository.save(user)
-    }
 
     fun update(id: Long, userDto: UserDto): UserEntity {
-        val existingUser = userRepository.findById(id).orElseThrow { Exception("Usuario no encontrado") }
+        val user = userRepository.findById(id)
+            .orElseThrow { IllegalArgumentException("Usuario no encontrado") }
 
-        existingUser.username = userDto.username ?: existingUser.username
-        existingUser.email = userDto.email ?: existingUser.email
-        existingUser.locked = userDto.locked ?: existingUser.locked
-        existingUser.disabled = userDto.disabled ?: existingUser.disabled
+        user.username = userDto.username?.trim() ?: user.username
+        user.email = userDto.email?.trim() ?: user.email
+        user.locked = userDto.locked ?: user.locked
+        user.disabled = userDto.disabled ?: user.disabled
 
-        // Si se quiere permitir actualizar contraseña:
+        // ✅ Solo actualiza la contraseña si fue enviada
         if (!userDto.password.isNullOrBlank()) {
-            existingUser.password = passwordEncoder.encode(userDto.password)
+            user.password = passwordEncoder.encode(userDto.password)
         }
 
-        return userRepository.save(existingUser)
+        // ✅ Solo actualiza el rol si ha cambiado
+        val currentRole = user.roles.firstOrNull()?.role
+        if (!userDto.role.isNullOrBlank() && userDto.role != currentRole) {
+            user.roles.clear()
+            val newRole = RoleEntity().apply {
+                role = userDto.role
+                this.user = user
+            }
+            user.roles.add(newRole)
+        }
+
+        return userRepository.save(user)
     }
-    */
+
 }

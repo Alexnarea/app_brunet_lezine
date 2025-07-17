@@ -55,12 +55,10 @@ class UserController(
         val createdUser = userService.create(userDto)
         return ResponseEntity.ok(UserMapper.toUserDto(createdUser))
     }
-/*
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody userDto: UserDto): ResponseEntity<UserDto> {
         val updatedUser = userService.update(id, userDto)
         return ResponseEntity.ok(UserMapper.toUserDto(updatedUser))
     }
-    */
 
 }
