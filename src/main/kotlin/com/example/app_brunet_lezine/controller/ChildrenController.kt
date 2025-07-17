@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/children")
+@RequestMapping("/api/children")
 class ChildrenController {
     @Autowired
     lateinit var childrenService: ChildrenService

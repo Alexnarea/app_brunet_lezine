@@ -12,7 +12,7 @@ class CorsConfig {
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val corsConfiguration = CorsConfiguration().apply {
-            allowedOrigins = listOf("http://localhost:5173")  // Sin la barra al final
+            allowedOrigins = listOf("http://localhost:5173","https://app.brunetlezinetest.com")  // Sin la barra al final
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH")
             allowedHeaders = listOf("*")
             allowCredentials = true
