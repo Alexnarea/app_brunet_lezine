@@ -30,7 +30,7 @@ class SecurityConfig(
 
                     // Evaluadores y admin
                     .requestMatchers(
-                        "/children/**",
+                        "/api/children/**",
                         "/api/evaluations/**",
                         "/api/test-items/**",
                         "/api/responses/**",
