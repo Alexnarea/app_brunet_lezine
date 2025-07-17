@@ -26,7 +26,6 @@ class JwtUtil {
         val now = Date()
         val expiry = Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(15))
 
-        // ⚠ Aquí accedemos correctamente al UserDetails
         val userDetails = authentication.principal as? UserDetails
             ?: throw IllegalStateException("El principal no es un UserDetails")
 
@@ -35,8 +34,10 @@ class JwtUtil {
         val userEntity = userRepository.findByUsername(username)
             ?: throw IllegalStateException("Usuario no encontrado al generar el token")
 
+        // 👇 Aquí está el cambio importante
         val authorities = userDetails.authorities
-            .joinToString(",") { it.authority }
+            .map { it.authority }
+            .joinToString(",") { if (it.startsWith("ROLE_")) it else "ROLE_$it" }
 
         return JWT.create()
             .withSubject(username)
