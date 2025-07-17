@@ -2,6 +2,7 @@ package com.example.app_brunet_lezine.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -26,9 +27,10 @@ class SecurityConfig(
             }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/", "/api/auth/**").permitAll() // ✅ permitido público
+                    // Rutas públicas
+                    .requestMatchers("/", "/api/auth/**").permitAll()
 
-                    // Evaluadores y admin
+                    // Accesibles por ADMIN y EVALUATOR (todos los métodos)
                     .requestMatchers(
                         "/api/children/**",
                         "/api/evaluations/**",
@@ -37,11 +39,12 @@ class SecurityConfig(
                         "/api/global-results/**"
                     ).hasAnyRole("ADMIN", "EVALUATOR")
 
-                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
-
+                    // Solo ADMIN puede acceder a gestión de usuarios y evaluadores
+                    .requestMatchers("/api/users/**").hasRole("ADMIN")
                     .requestMatchers("/api/evaluators/**").hasRole("ADMIN")
 
-                    .anyRequest().hasRole("ADMIN")
+                    // Cualquier otra ruta requiere estar autenticado (no se limita solo a ADMIN)
+                    .anyRequest().authenticated()
             }
             .addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
 
