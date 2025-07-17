@@ -26,7 +26,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/api/auth/**").permitAll() // Público
+                    .requestMatchers("/api/auth/**").permitAll()
 
                     // Evaluadores y admin
                     .requestMatchers(
@@ -37,9 +37,15 @@ class SecurityConfig(
                         "/api/global-results/**"
                     ).hasAnyRole("ADMIN", "EVALUATOR")
 
-                    // Todo lo demás solo admin
+                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN")
+
+                    // Acceso a /api/evaluators solo ADMIN
+                    .requestMatchers("/api/evaluators/**").hasRole("ADMIN")
+
+                    // Todo lo demás también solo ADMIN
                     .anyRequest().hasRole("ADMIN")
             }
+
             .addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
