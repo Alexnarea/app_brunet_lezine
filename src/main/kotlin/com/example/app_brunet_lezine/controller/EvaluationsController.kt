@@ -16,6 +16,21 @@ class EvaluationsController {
     @Autowired
     lateinit var evaluationsService: EvaluationsService
 
+    // 🔷 ADMIN: estadísticas globales
+    @GetMapping("/dashboard/admin")
+    fun getAdminDashboard(): ResponseEntity<AdminDashboardDto> {
+        val data = evaluationsService.getAdminDashboardData()
+        return ResponseEntity.ok(data)
+    }
+
+    // 🔷 EVALUADOR: estadísticas personales
+    @GetMapping("/dashboard/evaluator")
+    fun getEvaluatorDashboard(): ResponseEntity<EvaluatorDashboardDto> {
+        val username = SecurityContextHolder.getContext().authentication.name
+        val data = evaluationsService.getEvaluatorDashboardDataByUsername(username)
+        return ResponseEntity.ok(data)
+    }
+
     @GetMapping
     fun findAll(): ResponseEntity<List<EvaluationsDto>> {
         val evaluations = evaluationsService.findAll()
@@ -58,20 +73,6 @@ class EvaluationsController {
         evaluationsService.delete(id)
         return ResponseEntity.noContent().build()
     }
-
-    // 🔷 ADMIN: estadísticas globales
-    @GetMapping("/dashboard/admin")
-    fun getAdminDashboard(): ResponseEntity<AdminDashboardDto> {
-        val data = evaluationsService.getAdminDashboardData()
-        return ResponseEntity.ok(data)
-    }
-
-    // 🔷 EVALUADOR: estadísticas personales
-    @GetMapping("/dashboard/evaluator")
-    fun getEvaluatorDashboard(): ResponseEntity<EvaluatorDashboardDto> {
-        val username = SecurityContextHolder.getContext().authentication.name
-        val data = evaluationsService.getEvaluatorDashboardDataByUsername(username)
-        return ResponseEntity.ok(data)
-    }
 }
+
 
