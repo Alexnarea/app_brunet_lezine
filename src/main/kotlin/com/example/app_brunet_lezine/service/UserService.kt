@@ -48,7 +48,7 @@ class UserService(
             }
 
             userRepository.deleteById(userId)
-            return SuccessResponse("success")
+            return SuccessResponse("success", message = "Niño eliminado exitosamente")
         } catch (e: DataIntegrityViolationException) {
             throw SQLException("Violación de integridad de datos")
         } catch (e: Exception) {

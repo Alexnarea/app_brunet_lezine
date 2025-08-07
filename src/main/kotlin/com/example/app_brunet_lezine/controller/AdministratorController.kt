@@ -10,39 +10,49 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/administrators")
+@RequestMapping("/api/administrators")
 class AdministratorController {
 
     @Autowired
     lateinit var administratorService: AdministratorService
 
     @GetMapping
-    fun findAll(): ResponseEntity<*> {
+    fun findAll(): ResponseEntity<SuccessResponse> {
         val response = administratorService.findAll()
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity.ok(
+            SuccessResponse(data = response, message = "Administradores encontrados")
+        )
     }
 
     @GetMapping("/{id}")
-    fun findById(@PathVariable id: Long): ResponseEntity<*> {
+    fun findById(@PathVariable id: Long): ResponseEntity<SuccessResponse> {
         val response = administratorService.findById(id)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity.ok(
+            SuccessResponse(data = response, message = "Administrador encontrado")
+        )
     }
 
     @PostMapping
-    fun save(@RequestBody @Valid administratorDto: AdministratorDto): ResponseEntity<Any> {
+    fun save(@RequestBody @Valid administratorDto: AdministratorDto): ResponseEntity<SuccessResponse> {
         val response = administratorService.save(administratorDto)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            SuccessResponse(data = response, message = "Administrador creado correctamente")
+        )
     }
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody @Valid administratorDto: AdministratorDto): ResponseEntity<Any> {
+    fun update(@PathVariable id: Long, @RequestBody @Valid administratorDto: AdministratorDto): ResponseEntity<SuccessResponse> {
         val response = administratorService.update(id, administratorDto)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity.ok(
+            SuccessResponse(data = response, message = "Administrador actualizado correctamente")
+        )
     }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+    fun delete(@PathVariable id: Long): ResponseEntity<SuccessResponse> {
         administratorService.delete(id)
-        return ResponseEntity(SuccessResponse(data = "Administrator with id $id deleted"), HttpStatus.OK)
+        return ResponseEntity.ok(
+            SuccessResponse(data = null, message = "Administrador eliminado correctamente")
+        )
     }
 }

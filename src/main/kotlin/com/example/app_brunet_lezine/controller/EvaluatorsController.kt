@@ -12,19 +12,20 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/evaluators")
 class EvaluatorsController {
+
     @Autowired
     lateinit var evaluatorsService: EvaluatorsService
 
     @GetMapping
-    fun findAll(): ResponseEntity<*>{
+    fun findAll(): ResponseEntity<*> {
         val response = evaluatorsService.findAll()
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity(SuccessResponse(data = response, message = "Evaluadores listados correctamente"), HttpStatus.OK)
     }
 
     @GetMapping("/{id}")
-    fun findById(@PathVariable id: Long): ResponseEntity<*>{
+    fun findById(@PathVariable id: Long): ResponseEntity<*> {
         val response = evaluatorsService.findById(id)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity(SuccessResponse(data = response, message = "Evaluador recuperado exitosamente"), HttpStatus.OK)
     }
 
     @GetMapping("/by-user-id/{userId}")
@@ -42,26 +43,24 @@ class EvaluatorsController {
     @GetMapping("/available-users")
     fun getAvailableUsers(): ResponseEntity<*> {
         val availableUsers = evaluatorsService.findAvailableUsers()
-        return ResponseEntity(SuccessResponse(data = availableUsers), HttpStatus.OK)
+        return ResponseEntity(SuccessResponse(data = availableUsers, message = "Usuarios disponibles listados correctamente"), HttpStatus.OK)
     }
 
     @PostMapping
-    fun save (@RequestBody @Valid evaluatorsDto: EvaluatorsDto): ResponseEntity<Any>{
+    fun save(@RequestBody @Valid evaluatorsDto: EvaluatorsDto): ResponseEntity<Any> {
         val response = evaluatorsService.save(evaluatorsDto)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.CREATED)
+        return ResponseEntity(SuccessResponse(data = response, message = "Evaluador registrado correctamente"), HttpStatus.CREATED)
     }
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody @Valid evaluatorDto: EvaluatorsDto): ResponseEntity<Any>{
+    fun update(@PathVariable id: Long, @RequestBody @Valid evaluatorDto: EvaluatorsDto): ResponseEntity<Any> {
         val response = evaluatorsService.update(id, evaluatorDto)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity(SuccessResponse(data = response, message = "Evaluador actualizado correctamente"), HttpStatus.OK)
     }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Any>{
+    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
         val response = evaluatorsService.delete(id)
-        return ResponseEntity(SuccessResponse(data = response), HttpStatus.OK)
+        return ResponseEntity(SuccessResponse(data = response, message = "Evaluador eliminado correctamente"), HttpStatus.OK)
     }
-
-
 }

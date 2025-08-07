@@ -1,14 +1,12 @@
 package com.example.app_brunet_lezine.controller
 
-import com.example.app_brunet_lezine.dto.EvaluationDetailDto
-import com.example.app_brunet_lezine.dto.EvaluationRequestDto
-import com.example.app_brunet_lezine.dto.EvaluationResultDto
-import com.example.app_brunet_lezine.dto.EvaluationsDto
+import com.example.app_brunet_lezine.dto.*
 import com.example.app_brunet_lezine.service.EvaluationsService
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -49,7 +47,6 @@ class EvaluationsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result)
     }
 
-
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody dto: EvaluationsDto): ResponseEntity<EvaluationsDto> {
         val updated = evaluationsService.update(id, dto)
@@ -61,4 +58,20 @@ class EvaluationsController {
         evaluationsService.delete(id)
         return ResponseEntity.noContent().build()
     }
+
+    // 🔷 ADMIN: estadísticas globales
+    @GetMapping("/dashboard/admin")
+    fun getAdminDashboard(): ResponseEntity<AdminDashboardDto> {
+        val data = evaluationsService.getAdminDashboardData()
+        return ResponseEntity.ok(data)
+    }
+
+    // 🔷 EVALUADOR: estadísticas personales
+    @GetMapping("/dashboard/evaluator")
+    fun getEvaluatorDashboard(): ResponseEntity<EvaluatorDashboardDto> {
+        val username = SecurityContextHolder.getContext().authentication.name
+        val data = evaluationsService.getEvaluatorDashboardDataByUsername(username)
+        return ResponseEntity.ok(data)
+    }
 }
+

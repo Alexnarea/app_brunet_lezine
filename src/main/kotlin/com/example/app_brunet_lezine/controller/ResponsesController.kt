@@ -27,7 +27,7 @@ class ResponsesController {
             val response = responsesService.findById(id)
             ResponseEntity.ok(response)
         } catch (ex: EntityNotFoundException) {
-            ResponseEntity.notFound().build()
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         }
     }
 
@@ -43,7 +43,7 @@ class ResponsesController {
             val created = responsesService.save(dto)
             ResponseEntity.status(HttpStatus.CREATED).body(created)
         } catch (ex: Exception) {
-            ResponseEntity.badRequest().build()
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
     }
 
@@ -53,9 +53,9 @@ class ResponsesController {
             val updated = responsesService.update(id, dto)
             ResponseEntity.ok(updated)
         } catch (ex: EntityNotFoundException) {
-            ResponseEntity.notFound().build()
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
-            ResponseEntity.badRequest().build()
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
     }
 
@@ -65,7 +65,7 @@ class ResponsesController {
             responsesService.delete(id)
             ResponseEntity.noContent().build()
         } catch (ex: EntityNotFoundException) {
-            ResponseEntity.notFound().build()
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         }
     }
 }

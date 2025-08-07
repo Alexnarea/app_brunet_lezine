@@ -27,8 +27,8 @@ class SecurityConfig(
             }
             .authorizeHttpRequests { auth ->
                 auth
-                    // Rutas públicas
-                    .requestMatchers("/", "/api/auth/**").permitAll()
+                    // ✅ Rutas públicas
+                    .requestMatchers("/", "/api/auth/**", "/api/users/login").permitAll()
 
                     // Accesibles por ADMIN y EVALUATOR (todos los métodos)
                     .requestMatchers(
@@ -39,13 +39,14 @@ class SecurityConfig(
                         "/api/global-results/**"
                     ).hasAnyRole("ADMIN", "EVALUATOR")
 
-                    // Solo ADMIN puede acceder a gestión de usuarios y evaluadores
+                    // Solo ADMIN puede acceder al resto de /users y /evaluators
                     .requestMatchers("/api/users/**").hasRole("ADMIN")
                     .requestMatchers("/api/evaluators/**").hasRole("ADMIN")
 
-                    // Cualquier otra ruta requiere estar autenticado (no se limita solo a ADMIN)
+                    // Cualquier otra ruta requiere autenticación
                     .anyRequest().authenticated()
             }
+
             .addFilterBefore(JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()

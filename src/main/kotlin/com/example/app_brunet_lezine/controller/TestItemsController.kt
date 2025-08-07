@@ -4,6 +4,7 @@ import com.example.app_brunet_lezine.dto.TestItemsDto
 import com.example.app_brunet_lezine.response.SuccessResponse
 import com.example.app_brunet_lezine.service.TestItemsService
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -31,7 +32,7 @@ class TestItemsController(
         return ResponseEntity.ok(items)
     }
 
-    // ✅ NUEVO ENDPOINT para obtener ítems por una lista de IDs
+    // ✅ Obtener ítems por una lista de IDs
     @PostMapping("/by-ids")
     fun getItemsByIds(@RequestBody ids: List<Long>): ResponseEntity<List<TestItemsDto>> {
         val items = testItemsService.findAllByIds(ids)
@@ -40,19 +41,24 @@ class TestItemsController(
 
     @PostMapping
     fun create(@Valid @RequestBody testItemsDto: TestItemsDto): ResponseEntity<TestItemsDto> {
-        val createdTestItem = testItemsService.save(testItemsDto)
-        return ResponseEntity.ok(createdTestItem)
+        val created = testItemsService.save(testItemsDto)
+        return ResponseEntity.status(HttpStatus.CREATED).body(created)
     }
 
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody testItemsDto: TestItemsDto): ResponseEntity<TestItemsDto> {
-        val updatedTestItem = testItemsService.update(id, testItemsDto)
-        return ResponseEntity.ok(updatedTestItem)
+        val updated = testItemsService.update(id, testItemsDto)
+        return ResponseEntity.ok(updated)
     }
 
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Long): ResponseEntity<SuccessResponse> {
         testItemsService.delete(id)
-        return ResponseEntity.ok(SuccessResponse("TestItem eliminado correctamente"))
+        return ResponseEntity.ok(
+            SuccessResponse(
+                data = "TestItem eliminado correctamente",
+                message = "Niño eliminado exitosamente"
+            )
+        )
     }
 }
